@@ -2,24 +2,20 @@ from __future__ import print_function
 from gurobipy import *
 import pandas as pd
 import numpy as np
+
+"""Define the data to be used"""
 class Data:
     demand_point_num = 0
     demand_type = 0
     vehicle_num = 0
     capacity = 0
     inventory = []
-    consumcapacity = []
-    demand_LB = [[]]
-    demand_UB = [[]]
-    demand_average = [[]]
-    demand_MAD = [[]]
-
-    demand_average_LB = [[]]
-    demand_average_UB = [[]]
-    demand = []
+  """"............"""
 
     M = 0
-
+    
+    
+"""Read data of each instance CX"""
 def readData(data):
     demand = pd.read_excel(r'cedelocation\demandnode_CX.xlsx',header=None)
     demandnode = demand.values
@@ -38,27 +34,7 @@ def readData(data):
     data.demand_average = np.load(r'cedelocation\demand_average_CX.npy')
 
 
-    demand_MAD = pd.read_excel(r'cedelocation\demand_MAD_CX.xlsx')
-    np.save("demand_MAD_CX",demand_MAD)
-    data.demand_MAD = np.load(r'cedelocation\demand_MAD_CX.npy')
-
-    demand_average_LB = pd.read_excel(r'cedelocation\demand_average_LB_CX.xlsx')
-    np.save("demand_average_LB_CX",demand_average_LB)
-    data.demand_average_LB = np.load(r'cedelocation\demand_average_LB_CX.npy')
-
-    demand_average_UB = pd.read_excel(r'cedelocation\demand_average_UB_CX.xlsx')
-    np.save("demand_average_UB_CX",demand_average_UB)
-    data.demand_average_UB = np.load(r'cedelocation\demand_average_UB_CX.npy')
-
-
-    data.M = 100000
-    data.vehicle_num = "distribution fleet nuber"
-    data.capacity = 5000
-
-    data.consumcapacity = [1, 2, 1, 3]
-    data.demand_type = len(data.consumcapacity)
-
-    data.inventory = "inventory file"
+ """"....................."""
 
 
 data = Data()
@@ -66,21 +42,24 @@ readData(data)
 
 model = Model("P2")
 
+"""Define variables based on the model, and write the objective function and constraints."""
 
 y = model.addVars(data.vehicle_num, data.demand_point_num, vtype=GRB.BINARY, name="y")
 z = model.addVars(data.vehicle_num, data.demand_point_num, data.demand_type, vtype=GRB.CONTINUOUS, name="z")
 x = model.addVars(data.vehicle_num, vtype=GRB.BINARY,name="x")
 
 
+"""dual variables"""
+
 dual_yita = model.addVar(vtype=GRB.CONTINUOUS, name="dual_yita")
 dual_aerfa1 = model.addVars(data.demand_point_num, data.demand_type, vtype=GRB.CONTINUOUS,name="dual_aerfa1")
 dual_aerfa2 =model.addVars(data.demand_point_num, data.demand_type, vtype=GRB.CONTINUOUS,name="dual_aerfa2")
 dual_beita1 = model.addVars(data.demand_point_num, data.demand_type, vtype=GRB.CONTINUOUS,name="dual_beita1")
-dual_beita2 = model.addVars(data.demand_point_num, data.demand_type, vtype=GRB.CONTINUOUS,name="dual_beita2")
-dual_tao = model.addVars(data.demand_point_num, data.demand_type, vtype=GRB.CONTINUOUS,name="dual_tao")
-fai = model.addVars(data.vehicle_num, data.demand_point_num, data.demand_type, vtype=GRB.CONTINUOUS, name="fai")
+"""".................."""
 
 
+"""In accordance with the journal's data and code sharing policy, we provide the core implementation of the proposed algorithm. 
+Due to proprietary technology limitations, some parts have been omitted."""
 model.update()
 
 model.setObjective(quicksum(dual_aerfa1[k,m] * data.demand_average_UB[k][m]- dual_aerfa2[k,m] * data.demand_average_LB[k][m] + dual_beita1[k,m] * data.demand_MAD[k][m] +
@@ -121,31 +100,7 @@ for m in range(data.demand_type):
 
 
 
-for h in range(data.vehicle_num):
-    model.addConstr(quicksum(fai[h,k,m] * data.consumcapacity[m] for k in range(data.demand_point_num) for m in range(data.demand_type)) <= data.capacity )
-
-
-model.addConstr( dual_yita - quicksum((dual_beita1[k,m] - dual_beita2[k,m]) * data.demand_average[k][m] for k in range(data.demand_point_num)
-                                      for m in range(data.demand_type)) >= quicksum(dual_tao[k,m] for k in range(data.demand_point_num) for m in range(data.demand_type)) )
-
-for k in range(data.demand_point_num):
-    for m in range(data.demand_type):
-        model.addConstr(dual_tao[k,m] >= data.demand_LB[k][m] * (1- dual_aerfa1[k,m]+dual_aerfa2[k,m] - dual_beita1[k,m] + dual_beita2[k,m]) - quicksum(fai[h,k,m] for h in range(data.vehicle_num)))
-
-for k in range(data.demand_point_num):
-    for m in range(data.demand_type):
-        model.addConstr(dual_tao[k,m] >= data.demand_UB[k][m] * (1- dual_aerfa1[k,m]+dual_aerfa2[k,m] - dual_beita1[k,m] + dual_beita2[k,m]) - quicksum(fai[h,k,m] for h in range(data.vehicle_num)))
-
-for k in range(data.demand_point_num):
-    for m in range(data.demand_type):
-        model.addConstr(dual_tao[k,m] >= - data.demand_LB[k][m] * (dual_aerfa1[k,m] - dual_aerfa2[k,m] + dual_beita1[k,m] - dual_beita2[k,m]) )
-
-for k in range(data.demand_point_num):
-    for m in range(data.demand_type):
-        model.addConstr(dual_tao[k,m] >= - data.demand_UB[k][m] * (dual_aerfa1[k,m] - dual_aerfa2[k,m] + dual_beita1[k,m] - dual_beita2[k,m]))
-
-
-model.addConstr(quicksum(x[h] for h in range(data.vehicle_num)) <= data.vehicle_num)
+"""...................."""
 
 model.Params.OutputFlag = 1
 model.Params.LogFile = "log_file_P2.txt"
@@ -155,9 +110,3 @@ model.optimize()
 
 model.printAttr('X')
 print("objective value:", model.getAttr("ObjVal"))
-ce = [ [] for _ in range(data.vehicle_num) ]
-for i in range(data.vehicle_num):
-    for j in range(data.demand_point_num):
-        if y[i,j].x==1:
-            ce[i].append(data.demand[0,j])
-print(ce)
