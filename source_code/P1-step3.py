@@ -8,6 +8,8 @@ import heapq
 import threading
 
 
+
+
 def dijkstra(adj_matrix, start, end, constraint_nodes, constraint_times, start_time=0):
     time_constraints = dict(zip(
         constraint_nodes.flatten().astype(int).tolist(),
@@ -160,33 +162,7 @@ def largest_savingtime_destory(sol, traveltime_full, w, repairnode, repairnode_c
 
     timegap_afterremoved = []
 
-    for i in range(len(vehicel_for_demandnode)):
-        time_gap_vehicle = []
-        currentvehicel_for_demandnode = copy.deepcopy(vehicel_for_demandnode)
-        if len(currentvehicel_for_demandnode[i]) > 1:
-            current_time = copy.deepcopy(timebeforeremoved)
-            BB= copy.deepcopy(currentvehicel_for_demandnode[i])
-            BB.remove(currentvehicel_for_demandnode[i][0])
-            current_time[i]=time_calculate(BB,0,traveltime_full,repairnode, repairnode_canreachtime)
-            time_gap_vehicle.append(max(timebeforeremoved) - max(current_time))
-            for j in range(1, len(currentvehicel_for_demandnode[i]) - 1):
-                current_time = copy.deepcopy(timebeforeremoved)
-                BB =copy.deepcopy(currentvehicel_for_demandnode[i])
-                BB.remove(currentvehicel_for_demandnode[i][j])
-                current_time[i]= time_calculate(BB, 0, traveltime_full, repairnode, repairnode_canreachtime)
-
-                time_gap_vehicle.append(max(timebeforeremoved) - max(current_time))
-            current_time = copy.deepcopy(timebeforeremoved)
-            BB = copy.deepcopy(currentvehicel_for_demandnode[i])
-            BB.remove(currentvehicel_for_demandnode[i][-1])
-            current_time[i] = time_calculate(BB, 0, traveltime_full,  repairnode, repairnode_canreachtime)
-
-            time_gap_vehicle.append(max(timebeforeremoved) - max(current_time))
-        else:
-            current_time = copy.deepcopy(timebeforeremoved)
-            current_time[i] = 0
-            time_gap_vehicle.append(max(timebeforeremoved) - max(current_time))
-        timegap_afterremoved.append(time_gap_vehicle)
+   """................"""
 
 
     one_dimensional_timegap = [i for arr in timegap_afterremoved for i in arr]
@@ -219,47 +195,7 @@ def split_solution(sol):
 def time_calculate(vehicel_for_demandnode,usevehicle_num,traveltime_full,repairnode, repairnode_canreachtime):
     timeofvehicle = []
 
-    if usevehicle_num > 0:
-        for i in range(usevehicle_num + 1):
-            currenttraveltime_full = copy.deepcopy(traveltime_full)
-            if len(vehicel_for_demandnode[i]) > 1:
-
-                expr = dijkstra(currenttraveltime_full, 0, vehicel_for_demandnode[i][0], repairnode,
-                                repairnode_canreachtime, 0)
-
-                for j in range(len(vehicel_for_demandnode[i]) - 1):
-                    expr = dijkstra(currenttraveltime_full, vehicel_for_demandnode[i][j],
-                                    vehicel_for_demandnode[i][j + 1], repairnode, repairnode_canreachtime, expr)
-
-                expr = dijkstra(currenttraveltime_full, vehicel_for_demandnode[i][-1], 0, repairnode,
-                                repairnode_canreachtime, expr)
-                timeofvehicle.append(expr)
-            elif len(vehicel_for_demandnode[i]) == 1:
-                expr = dijkstra(currenttraveltime_full, 0, vehicel_for_demandnode[i][0], repairnode,
-                                repairnode_canreachtime, 0)
-                expr = dijkstra(currenttraveltime_full, vehicel_for_demandnode[i][0], 0, repairnode,
-                                repairnode_canreachtime, expr)
-                timeofvehicle.append(expr)
-    elif usevehicle_num == 0:
-        currenttraveltime_full = copy.deepcopy(traveltime_full)
-        if len(vehicel_for_demandnode) > 1:
-
-            expr = dijkstra(currenttraveltime_full, 0, vehicel_for_demandnode[0], repairnode,
-                            repairnode_canreachtime, 0)
-
-            for j in range(len(vehicel_for_demandnode) - 1):
-                expr = dijkstra(currenttraveltime_full, vehicel_for_demandnode[j],
-                                vehicel_for_demandnode[j + 1], repairnode, repairnode_canreachtime, expr)
-
-            expr = dijkstra(currenttraveltime_full, vehicel_for_demandnode[-1], 0, repairnode,
-                            repairnode_canreachtime, expr)
-            timeofvehicle.append(expr)
-        elif len(vehicel_for_demandnode) == 1:
-            expr = dijkstra(currenttraveltime_full, 0, vehicel_for_demandnode[0], repairnode,
-                            repairnode_canreachtime, 0)
-            expr = dijkstra(currenttraveltime_full, vehicel_for_demandnode[0], 0, repairnode,
-                            repairnode_canreachtime, expr)
-            timeofvehicle.append(expr)
+    """".............."""
     return timeofvehicle
 
 def obj_calculate(sol, traveltime_full, repairnode, repairnode_canreachtime):
@@ -308,34 +244,8 @@ def random_insert(sol, removelist, vehiclecapacity, demand_UB, consumcapacity,
     for i in range(vehicle_shuliang - len(vehicle_demand)):
         vehicle_demand.append([])
 
-    vehicleload = []
-    for i in range(len(vehicle_demand)):
-        current_vehicleload = 0
-        for j in range(len(vehicle_demand[i])):
-            currentnodeload = calculateload(vehicle_demand[i][j], demand_UB, consumcapacity,add0demandnode)
-            current_vehicleload = current_vehicleload + currentnodeload
-        vehicleload.append(current_vehicleload)
-
-    for i in range(vehicle_shuliang - len(vehicleload)):
-        vehicleload.append(0)
-
-    for i in range(len(removelist)):
-        available_insertindex = []
-        for j in range(len(vehicleload)):
-            removednodeload = calculateload(removelist[i], demand_UB, consumcapacity,add0demandnode)
-            if vehicleload[j] + removednodeload <= vehiclecapacity:
-                available_insertindex.append(list(range(0, len(vehicle_demand[j]) + 1)))
-            else:
-                available_insertindex.append([])
-
-        non_empty_rows = [index for index, row in enumerate(available_insertindex) if row]
-        if non_empty_rows:
-            selected_row = rd.choice(non_empty_rows)
-            selected_column = rd.randint(0, len(available_insertindex[selected_row]) - 1)
-
-            vehicleload[selected_row] = vehicleload[selected_row] + calculateload(removelist[i], demand_UB,
-                                                                                  consumcapacity,add0demandnode)
-            vehicle_demand[selected_row].insert(selected_column, removelist[i])
+    """"..............""""
+    
     repairsol = two_chang_onedimensional(vehicle_demand)
     return repairsol
 
@@ -393,34 +303,12 @@ def greedy_insert(sol, removelist, traveltime_full, demand_UB, vehiclecapacity, 
                 else:
                     timeofvehicle.append(0)
                     timeofvehicle_index.append("inf")
-            else:  # 若是空车
+            else:  
                 AA = time_calculate([removelist[i]], 0, traveltime_full,repairnode, repairnode_canreachtime)
                 timeofvehicle.append(AA)
                 timeofvehicle_index.append(0)
 
-        gap = []
-
-        for k in range(len(timeofvehicle)):
-            if timeofvehicle[k] != 0:
-                gap.append(max(time_for_vehicle) - timeofvehicle[k])
-            else:
-                gap.append(float("-inf"))
-
-        for ii in range(len(gap)):
-            if isinstance(gap[ii],np.ndarray):
-                gap[ii] = gap[ii].mean()
-            else:
-                gap[ii] = gap[ii]
-
-        vehicle_index = np.argmax(gap)
-
-        thevehicle_index = timeofvehicle_index[vehicle_index]
-
-
-        vehicle_demand[vehicle_index].insert(thevehicle_index, removelist[i])
-        vehicleload[vehicle_index] = vehicleload[vehicle_index] + removednodeload
-
-    repairsol = two_chang_onedimensional(vehicle_demand)
+    """""................."""
     return repairsol
 
 
@@ -509,39 +397,7 @@ def regret_insert(sol, removelist, traveltime_full, demand_UB, vehiclecapacity,
 
                 timeofvehicle_two.append(AA)
                 timeofvehicle_index_two.append(0)
-
-        gap1 = []
-        gap2 = []
-
-        for k in range(len(timeofvehicle_one)):
-            if timeofvehicle_one[k] != 0:
-                gap1.append(max(time_for_vehicle) - timeofvehicle_one[k])
-            else:
-                gap1.append(float("-inf"))
-
-        for k in range(len(timeofvehicle_two)):
-            if timeofvehicle_two[k] != 0:
-                gap2.append(max(time_for_vehicle) - timeofvehicle_two[k])
-            else:
-                gap2.append(float("-inf"))
-
-        one_two = [gap1, gap2]
-        combination_oneandtwo = [l for arr in one_two for l in arr]
-        top = [x for x in combination_oneandtwo if x < max(combination_oneandtwo)]
-
-        if max(top) != float("-inf"):
-            top_two = max(top)
-        else:
-            top_two = max(combination_oneandtwo)
-        position = [(l1, l2) for l1, sublist in enumerate(one_two) for l2, num in enumerate(sublist) if num == top_two]
-        if position[0][0] == 0:
-            vehicle_demand[position[0][1]].insert(timeofvehicle_index_one[position[0][1]], removelist[i])
-        else:
-            vehicle_demand[position[0][1]].insert(timeofvehicle_index_two[position[0][1]], removelist[i])
-
-        vehicleload[position[0][1]] = vehicleload[position[0][1]] + removenodeload  # 更新车辆负载
-
-    repairsol = two_chang_onedimensional(vehicle_demand)
+""".............."""
     return repairsol
 
 """read data of each instance"""
@@ -553,18 +409,13 @@ repairnode = pd.read_excel(r'codelocation\repairnode_CX.xlsx',header=None)
 np.save("repairnode_CX",repairnode)
 repairnode =np.load(r'codelocation\repairnode_CX.npy')
 traveltime_full = pd.read_excel(r'codelocation\traveltime_full_CX.xlsx',header=None)
-np.save("traveltime_full_CX",traveltime_full)
-traveltime_full =np.load(r'codelocation\traveltime_full_CX.npy')
-demand_UB1 = pd.read_excel(r'codelocation\demand_UB_CX.xlsx')
-np.save("demand_UB_CX",demand_UB1)
-demand_UB1=np.load(r'codelocation\demand_UB_CX.npy')
-repairnode_canreachtime = pd.read_excel(r'codelocation\repairnode_canreachtime_CX_DMP.xlsx',header=None)
-np.save("repairnode_canreachtime_CX",repairnode_canreachtime)
-repairnode_canreachtime =np.load(r'codelocation\repairnode_canreachtime_CX_DMP.npy')
 
+""""..................."""
 
+"""In accordance with the journal's data and code sharing policy, we provide the core implementation of the proposed algorithm. 
+Due to proprietary technology limitations, some parts have been omitted."""
 
-
+"""main function"""
 
 depot = [[0, 0, 0, 0]]
 demand_UB = np.r_[depot, demand_UB1]
