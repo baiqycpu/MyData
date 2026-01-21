@@ -5,7 +5,7 @@ import numpy as np
 
 
 class Data:
-
+    """Define the data to be used"""
     repairnode_num = 0
     repair_time_LB = []
     repair_time_UB = []
@@ -13,13 +13,7 @@ class Data:
     repair_time_MAD = []
     demandnode = []
     repairnode = []
-    traveltime_full = [[]]
-    traveltime_part = [[]]
-    traveltime_repair = [[]]
-    repairtime_average_LB = []
-    repairtime_average_UB = []
-    delet_repairnode = []
-    M = 0
+"""........"""
     crew_num = 0
     current_starttime0=0
     current_starttime1=0
@@ -74,28 +68,7 @@ def readData(data):
     data.repair_time_UB = np.insert(repairtime_UB, 0, [0])
     data.repair_time_UB = data.repair_time_UB[boolz]
     data.repair_time_UB = np.insert(data.repair_time_UB, 0, [0])
-    data.repair_time_UB = np.insert(data.repair_time_UB, 0, [0])
-
-    repairtime_MAD = pd.read_excel(r'codelocation\repairtime_MAD_CX.xlsx', header=None)
-    data.repair_time_MAD = np.insert(repairtime_MAD, 0, [0])
-    data.repair_time_MAD = data.repair_time_MAD[boolz]
-    data.repair_time_MAD = np.insert(data.repair_time_MAD, 0, [0])
-    data.repair_time_MAD = np.insert(data.repair_time_MAD, 0, [0])
-
-    data.M = 50000
-    data.crew_num = 3
-
-    repairtime_average_LB = pd.read_excel(r'codelocation\repairtime_average_LB_CX.xlsx', header=None)
-    data.repairtime_average_LB = np.insert(repairtime_average_LB, 0, [0])
-    data.repairtime_average_LB = data.repairtime_average_LB[boolz]
-    data.repairtime_average_LB = np.insert(data.repairtime_average_LB , 0, [0])
-    data.repairtime_average_LB = np.insert(data.repairtime_average_LB, 0, [0])
-
-    repairtime_average_UB = pd.read_excel(r'codelocation\repairtime_average_UB_CX.xlsx', header=None)
-    data.repairtime_average_UB = np.insert(repairtime_average_UB, 0, [0])
-    data.repairtime_average_UB = data.repairtime_average_UB[boolz]
-    data.repairtime_average_UB = np.insert(data.repairtime_average_UB, 0, [0])
-    data.repairtime_average_UB = np.insert(data.repairtime_average_UB, 0, [0])
+""".........."""
 
 
 def dijkstra(adj_matrix, start, end):
@@ -237,21 +210,21 @@ dual_lamda1 = model.addVar(vtype=GRB.CONTINUOUS, name="dual_lamda1")
 dual_kesei1 = model.addVars(data.repairnode_num, vtype=GRB.CONTINUOUS, name="dual_kesei1")
 dual_kesei2 = model.addVars(data.repairnode_num, vtype=GRB.CONTINUOUS, name="dual_kesei2")
 dual_fai11 = model.addVars(data.repairnode_num, vtype=GRB.CONTINUOUS, name="dual_fai11")
-dual_fai12 = model.addVars(data.repairnode_num, vtype=GRB.CONTINUOUS, name="dual_fai12")
-dual_bigseita1 = model.addVars(data.repairnode_num, vtype=GRB.CONTINUOUS, name="dual_bigseita1")
+""".........."""
 
 dual_lamda1_1 = model.addVar(vtype=GRB.CONTINUOUS, name="dual_lamda1_1")
 dual_kesei1_1 = model.addVars(data.repairnode_num, vtype=GRB.CONTINUOUS, name="dual_kesei1_1")
 dual_kesei2_1 = model.addVars(data.repairnode_num, vtype=GRB.CONTINUOUS, name="dual_kesei2_1")
-dual_fai11_1 = model.addVars(data.repairnode_num, vtype=GRB.CONTINUOUS, name="dual_fai11_1")
-dual_fai12_1 = model.addVars(data.repairnode_num, vtype=GRB.CONTINUOUS, name="dual_fai12_1")
-dual_bigseita1_1 = model.addVars(data.repairnode_num, vtype=GRB.CONTINUOUS, name="dual_bigseita1_1")
+"""........."""
 
 z = model.addVars(data.repairnode_num, data.crew_num, vtype=GRB.BINARY, name="z")
 
 FU = model.addVars(data.repairnode_num, data.repairnode_num, data.repairnode_num, data.crew_num, vtype=GRB.BINARY,
                    name="FU")
 
+
+"""In accordance with the journal's data and code sharing policy, we provide the core implementation of the proposed algorithm. 
+Due to proprietary technology limitations, some parts have been omitted."""
 
 model.update()
 
@@ -346,6 +319,7 @@ for i in range(data.repairnode_num):
                     model.addConstr(F[j, f] >= F[k, f] - (1 - FU[i, j, k, f]) * data.M)
 
 
+"""Based on the results obtained in step 1, input the departure times of each maintenance team in step 2."""
 
 model.addConstr(F[0, 0] == data.current_starttime0 )
 model.addConstr(F[1, 1] == data.current_starttime1 )
@@ -416,58 +390,11 @@ for i in range(3,data.repairnode_num):
     model.addConstr(quicksum(R[i, j, f] for j in range(data.repairnode_num) for f in range(data.crew_num)) <= 1)
 
 
-for i in range(soledemand_num):
-    for j in range(3,data.repairnode_num):
-        for f in range(data.crew_num):
-            if j!=0:
-                if ru[j][i]!=0:
-                    model.addConstr(h[i] - F[j, f]  + (1 - ru[j][i]) * data.M >= dual_lamda1 +
-                    dual_kesei1[j] * data.repairtime_average_UB[j] - dual_kesei2[j] * data.repairtime_average_LB[j]
-                    + dual_fai11[j] * data.repair_time_MAD[j] + dual_fai12[j] * data.repair_time_MAD[j])
-
-for i in range(data.repairnode_num):
-    model.addConstr(dual_lamda1 - dual_fai11[i] * data.repair_time_average[i] + dual_fai12[i] * data.repair_time_average[i] >= dual_bigseita1[i])
-    model.addConstr(dual_bigseita1[i] >= (1 - dual_kesei1[i] + dual_kesei2[i] - dual_fai11[i] + dual_fai12[i]) * data.repair_time_LB[i])
-    model.addConstr(dual_bigseita1[i] >= (1 - dual_kesei1[i] + dual_kesei2[i] - dual_fai11[i] + dual_fai12[i]) * data.repair_time_UB[i])
 
 
-for i in range(data.repairnode_num):
-    for j in range(3,data.repairnode_num):
-        for f in range(data.crew_num):
-            if i != j  :
-                model.addConstr(F[j,f] - F[i,f] -
-                                distance[i][j] + (1 - R[i, j, f]) * data.M >= dual_lamda1_1 + dual_kesei1_1[i] * data.repairtime_average_UB[i] - dual_kesei2_1[i] *
-                            data.repairtime_average_LB[i]
-                            + dual_fai11_1[i] * data.repair_time_MAD[i] + dual_fai12_1[i] * data.repair_time_MAD[i], "xin2")
-
-for i in range(data.repairnode_num):
-    model.addConstr(dual_lamda1_1 - dual_fai11_1[i] * data.repair_time_average[i] + dual_fai12_1[i] * data.repair_time_average[i] >= dual_bigseita1_1[i])
-    model.addConstr(dual_bigseita1_1[i] >= (1 - dual_kesei1_1[i] + dual_kesei2_1[i] - dual_fai11_1[i] + dual_fai12_1[i]) * data.repair_time_LB[i])
-    model.addConstr(dual_bigseita1_1[i] >= (1 - dual_kesei1_1[i] + dual_kesei2_1[i] - dual_fai11_1[i] + dual_fai12_1[i]) * data.repair_time_UB[i])
-
-
-
-model.addConstr(u[1,1]==0)
-model.addConstr(u[0,0]==0)
-model.addConstr(u[2,2]==0)
-
-for i in range(data.repairnode_num):
-    for j in range(3,data.repairnode_num):
-        for f in range(data.crew_num):
-            model.addConstr(R[i,j,f] <= z[j,f] * data.M)
-
-for i in range(3,data.repairnode_num):
-    for f in range(data.crew_num):
-        model.addConstr(F[i, f] <=  z[i,f] * data.M)
-
-
-for i in range(data.repairnode_num):
-    for j in range(data.repairnode_num):
-        for l in range(3,data.repairnode_num):
-            for f in range(data.crew_num):
-                model.addConstr(FU[i,j,l,f] <= N[i,j,l])
-                model.addConstr(FU[i,j,l,f] <= R[i,j,f])
-                model.addConstr(FU[i,j,l,f] >= N[i,j,l] + R[i,j,f] -1)
+"""........."""
+"""........."""
+"""........."""
 
 model.Params.OutputFlag = 1
 model.Params.LogFile = "log_file.txt"
@@ -476,11 +403,5 @@ model.optimize()
 
 model.printAttr('X')
 print("objective value:", model.getAttr("ObjVal"))
-for i in range(3,data.repairnode_num):
-    for f in range(data.crew_num):
-        if F[i, f].x != 0:
-            print("The", i, "accessible time:",
-                  F[i, f].x + dual_lamda1.x + dual_kesei1[i].x * data.repairtime_average_UB[i] - dual_kesei2[i].x *
-                  data.repairtime_average_LB[i]
-                  + dual_fai11[i].x * data.repair_time_MAD[i] + dual_fai12[i].x * data.repair_time_MAD[i])
+
 
